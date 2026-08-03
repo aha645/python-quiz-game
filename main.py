@@ -69,7 +69,7 @@ class QuizGame: # 상속받지않고
                 case 4:
                     print("퀴즈 점수 확인 시작")
                 case 5:
-                    print("게임종료 시작")
+                    print("게임을 종료합니다.")
                     break
 
 if __name__ == "__main__":
