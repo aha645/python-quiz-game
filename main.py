@@ -165,6 +165,38 @@ class QuizGame: # 상속받지않고
         print("="*40)
         print()
 
+    def add_quiz(self):
+        # 문제 텍스트를 입력받는다
+        question = read_str("문제를 입력하세요 :")
+        # 선택지 텍스트를 입력받는다
+        choice_list = []
+        for i in range(1,5):
+            choice_str = read_str(f"{i}번 :")
+            choice_list.append(choice_str)        
+        # 정답 숫자를 입력받는다
+        answer_num = read_int("정답 번호 입력: ",1,4)
+        # self.quiz_list 의 맨 뒷부분에 추가한다 append
+        self.quiz_list.append(Quiz(question,choice_list,answer_num))
+        # 전체 내용을 state.json에 저장한다
+        self.save()
+        print("\n퀴즈가 추가되었 습니다")
+
+    def show_quiz_list(self):
+        # self.quiz_list 에 데이터가 존재하는지 체크한다
+        if not self.quiz_list:
+            print("\n등록된 퀴즈가 없습니다")
+            return
+        print(f"\n등록된 퀴즈 (총 {len(self.quiz_list)} 개)")
+        print("-"*40)
+        # self.quiz_list 를 순차적으로 표시한다
+        for quiz_num, quiz in enumerate(self.quiz_list,start=1):
+            quiz.show(quiz_num)
+            print(f"정답은 {quiz.get_answer_msg()}")
+        print("-"*40)
+
+    def save(self):
+        pass        
+
     def run(self):
         try:
             while True:
@@ -176,8 +208,10 @@ class QuizGame: # 상속받지않고
                         self.play()
                     case 2:
                         print("퀴즈 추가 시작")
+                        self.add_quiz()
                     case 3:
                         print("퀴즈 목록 시작")
+                        self.show_quiz_list()
                     case 4:
                         print("퀴즈 점수 확인 시작")
                     case 5:
