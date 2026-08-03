@@ -82,8 +82,51 @@ class Quiz:
 """
 class QuizGame: # 상속받지않고
     def __init__(self): # 객체가 생성되는 순간 생성되는 변수, 객체 각각 별도공간 할당됨
-        self.quiz_list=[] # 퀴즈를 리스트로 메모리에서 관리함
+        self.quiz_list=self.default_quiz_list() # 퀴즈를 리스트로 메모리에서 관리함
         self.best_score = 0 # 퀴즈 풀었을때 최고 점수
+
+    # state.json파일이없을때 사용할 기본 퀴즈 생성
+    def default_quiz_list(slef)->list:
+        return [
+            Quiz("다음 중 얕은 복사(shallow copy)를 수행하는 방법은?",
+                ["copy.deepcopy(리스트)", "리스트[:]", 
+                 "리스트2 = 리스트1 (대입 연산)", 
+                 "json.dumps(리스트)"
+                ], 2),
+            Quiz("""다음 코드의 출력 결과는?
+                    def outer():
+                        x = 10
+                        def inner():
+                            nonlocal x
+                            x += 1
+                            return x
+                        return inner
+                    f = outer()
+                    print(f(), f())""",
+                ["10 10", 
+                 "11 12", 
+                 "10 11", 
+                 "11 11"
+                ], 2),
+            Quiz("다음 중 제너레이터(generator)를 만드는 방법이 아닌 것은?",
+                ["yield를 사용하는 함수", 
+                 "(x for x in range(5)) 형태의 표현식",
+                 "[x for x in range(5)] 형태의 표현식", 
+                 "__next__와 __iter__를 구현한 클래스"
+                ], 3),
+            Quiz("GIL(Global Interpreter Lock)에 대한 설명으로 옳은 것은?",
+                ["멀티프로세싱도 GIL 때문에 CPU 병렬 처리가 불가능하다",
+                 "CPU-bound 작업에서 멀티스레딩의 성능 향상을 제한한다",
+                 "GIL은 Python 3.10부터 완전히 제거되었다",
+                 "I/O-bound 작업에서는 멀티스레딩 성능 향상을 전혀 얻을 수 없다"
+                 ], 2),
+            Quiz("`is`와 `==`의 차이에 대한 설명으로 틀린 것은?",
+                ["`is`는 객체의 메모리 주소(정체성)를 비교한다",
+                "`==`는 객체의 값을 비교한다",
+                "작은 정수(-5~256)는 캐싱되어 `is`로 비교해도 True가 나올 수 있다",
+                "모든 문자열 리터럴은 항상 `is`로 비교했을 때 True가 보장된다"
+                ], 4),
+        ]
 
     def show_menu(self):
         print()
