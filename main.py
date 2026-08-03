@@ -7,7 +7,7 @@
 def read_int(pre_msg:str,value_min:int,value_max:int) -> int:
     # 올바른 정수가 들어올때 까지 반복
     while True:
-        usr_str = input().strip() # strip으로 앞뒤 공백을 제거함
+        usr_str = input(pre_msg).strip() # strip으로 앞뒤 공백을 제거함
         if usr_str=="":
             print("입력이 비어 있어요. 다시입력 하세요")
             continue
@@ -30,7 +30,7 @@ read_str 기능: 앞뒤 공백제거 및 빈 문자 제거
 def read_str(pre_msg:str)->str:
     # 빈 입력이 들어오면 다시처리
     while True:
-        usr_str = input().strip() # strip으로 앞뒤공벡제거
+        usr_str = input(pre_msg).strip() # strip으로 앞뒤공벡제거
         if usr_str=="":
             print("입력이 비어 있어요, 다시입력 하세요")
             continue
@@ -51,6 +51,7 @@ class Quiz:
               실제 문제(질문) 와 4지 선택 지문이 자동 표시된다.
     """
     def show(self, quiz_num:int):
+        print()
         print("-"*40)
         print(f"[문제{quiz_num} 번]",end=" ")
         print(self.question)
@@ -60,6 +61,10 @@ class Quiz:
             # choice_text는 실제 선택 문항이 나오게 된다
             print(f"{choice_num}. {choice_text}")
         print()
+
+    # choice_list에서 정답을 골라 표시한다
+    def get_answer_msg(self)->str:
+        return f"{self.answer}. {self.choice_list[self.answer-1]}"
 
     def check_answer(self,usr_answer) -> bool:
         return self.answer==usr_answer # 문제가 원래 갖고 있는 정답과 사용자가 입력한 정답이 같은지 체크한다
@@ -82,11 +87,11 @@ class Quiz:
 """
 class QuizGame: # 상속받지않고
     def __init__(self): # 객체가 생성되는 순간 생성되는 변수, 객체 각각 별도공간 할당됨
-        self.quiz_list=self.default_quiz_list() # 퀴즈를 리스트로 메모리에서 관리함
+        self.quiz_list:list[Quiz]=self.default_quiz_list() # 퀴즈를 리스트로 메모리에서 관리함
         self.best_score = 0 # 퀴즈 풀었을때 최고 점수
 
     # state.json파일이없을때 사용할 기본 퀴즈 생성
-    def default_quiz_list(slef)->list:
+    def default_quiz_list(slef)->list[Quiz]:
         return [
             Quiz("다음 중 얕은 복사(shallow copy)를 수행하는 방법은?",
                 ["copy.deepcopy(리스트)", "리스트[:]", 
@@ -138,6 +143,28 @@ class QuizGame: # 상속받지않고
         print("5. 종료")
         print("=" * 40)
 
+    # 저장된 퀴즈를 출제하고 정답체크 후 점수를 합산한다
+    def play(self):
+        if not self.quiz_list:
+            print("퀴즈 목록이 없어요. 퀴즈를 추가해 주세요")
+            return
+        ok_cnt=0
+        total_len = len(self.quiz_list)
+        for quiz_num, quiz in enumerate(self.quiz_list,start=1):
+            quiz.show(quiz_num)
+            usr_answer = read_int("정답입력 :",1,4)
+            if quiz.check_answer(usr_answer):
+                print("⭕️ 정답입니다.")
+                ok_cnt = ok_cnt + 1
+            else:
+                print(f"❌ 오답입니다. (정답: {quiz.get_answer_msg()})")
+        score = round((ok_cnt/total_len)*100) # 반올림((맞춘개수/전체문제)x100)
+        print()
+        print("="*40)
+        print(f"결과: {total_len} 문제 중 {ok_cnt} 문제 맞춤! ({score} 점)")
+        print("="*40)
+        print()
+
     def run(self):
         try:
             while True:
@@ -146,6 +173,7 @@ class QuizGame: # 상속받지않고
                 match usr_sel:
                     case 1:
                         print("퀴즈 풀기 시작")
+                        self.play()
                     case 2:
                         print("퀴즈 추가 시작")
                     case 3:
@@ -156,9 +184,9 @@ class QuizGame: # 상속받지않고
                         print("게임을 종료합니다.")
                         break
                     case _: # read_int에서 걸렀기 때문에 여기 오지 않지만 안전장치로 추가
-                        print("잘못된 입력입니다.")
+                        print("\n잘못된 입력입니다.")
         except (KeyboardInterrupt,EOFError):
-            print("프로그램을 강제 종료합니다.")
+            print("\n프로그램을 강제 종료합니다.")
 
 if __name__ == "__main__":
     game = QuizGame()
