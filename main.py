@@ -1,5 +1,19 @@
 import json
 import random
+from enum import Enum
+
+# 퀴즈 표시 방식을 나타내는 모드
+# QUESTION_ONLY: 질문만 표시
+# WITH_CHOICES : 질문 + 선택지
+# WITH_ANSWER  : 질문 + 선택지 + 정답
+# WITH_HINT    : 질문 + 선택지 + 힌트
+# ALL          : 질문 + 선택지 + 정답 + 힌트
+class ShowMode(Enum):
+    QUESTION_ONLY = 1
+    WITH_CHOICES = 2
+    WITH_ANSWER = 3
+    WITH_HINT = 4
+    ALL = 5
 # read_int 기능: 문자 공백제거, 빈 입력에 대응, 숫자아닌 입력에 대응, 숫자범위 벗어난 입력에 대응
 # pre_msg : str 타입으로 사용자에게 어떤것을 입력해야할지 메세지를 표시한다
 # value_min: int 타입으로 숫자범위 최소값
@@ -61,19 +75,25 @@ class Quiz:
         self.hint = hint # 힌트 정보 문자열
     """
     show 함수: quiz_num 는 int형식으로 문제를 몇 번으로 표시할 것인지 정하는 숫자 이고 문제 내부적으로 
-              실제 문제(질문) 와 선택 지문이 자동 표시된다.
+              mode에 따라 실제 문제(질문) 와 선택 지문이 선택적으로 표시된다.
     """
-    def show(self, quiz_num:int):
+    def show(self, quiz_num:int, mode:ShowMode=ShowMode.WITH_CHOICES):
         print()
         print("-"*40)
         print(f"[문제{quiz_num} 번]",end=" ")
         print(self.question)
         print()
+        if mode == ShowMode.QUESTION_ONLY:
+            return
         for choice_num, choice_text in enumerate(self.choice_list,start=1):#start=1 index=0번 아이템을 1로 시작한다
             # choice_num 은 1,2,3,4 나오게 된다
             # choice_text는 실제 선택 문항이 나오게 된다
             print(f"{choice_num}. {choice_text}")
-        print()
+
+        if mode in (ShowMode.WITH_ANSWER, ShowMode.ALL):
+            print(f"정답: {self.get_answer_msg()}")
+        if mode in (ShowMode.WITH_HINT, ShowMode.ALL):
+            print(f"힌트: {self.hint}")
 
     # choice_list에서 정답을 골라 표시한다
     def get_answer_msg(self)->str:
@@ -105,9 +125,16 @@ class QuizGame: # 상속받지않고
         self.quiz_list:list[Quiz]=[] # 퀴즈를 리스트로 메모리에서 관리함
         self.best_score = None # 퀴즈 풀었을때 최고 점수, 퀴즈풀지않고 스코어 확인시 None이면 퀴즈를 풀라고 해야함, 0으로 초기화하면 풀지도않았는데 점수가 0 인것으로 오해됨
         self.load() # load함수 내부에서 정상적이면 파일 내용으로 채우고 파일이 문제가 있다면 기본값으로 재설정 합니다
+        self.menu_list=[
+        "퀴즈 풀기",
+        "퀴즈 추가",
+        "퀴즈 목록",
+        "퀴즈 삭제",
+        "점수 확인",
+        "퀴즈 종료"]
 
     # state.json파일이없을때 사용할 기본 퀴즈 생성
-    def default_quiz_list(slef)->list[Quiz]:
+    def default_quiz_list(self)->list[Quiz]:
         return [
             Quiz("다음 중 얕은 복사(shallow copy)를 수행하는 방법은?",
                 ["copy.deepcopy(리스트)", "리스트[:]", 
@@ -162,12 +189,10 @@ class QuizGame: # 상속받지않고
     def show_menu(self):
         print()
         print("="*40)
-        print("1. 퀴즈 풀기")
-        print("2. 퀴즈 추가")
-        print("3. 퀴즈 목록")
-        print("4. 점수 확인")
-        print("5. 종료")
+        for idx,menu_str in enumerate(self.menu_list,start=1):
+            print(f"{idx}. {menu_str}")
         print("=" * 40)
+        print()
 
     # 저장된 퀴즈를 출제하고 정답체크 후 점수를 합산한다
     def play(self):
@@ -222,17 +247,16 @@ class QuizGame: # 상속받지않고
         self.save()
         print("\n퀴즈가 추가되었 습니다")
 
-    def show_quiz_list(self):
+    def show_quiz_list(self,mode:ShowMode=ShowMode.WITH_HINT):
         # self.quiz_list 에 데이터가 존재하는지 체크한다
         if not self.quiz_list:
             print("\n등록된 퀴즈가 없습니다")
             return
         print(f"\n등록된 퀴즈 (총 {len(self.quiz_list)} 개)")
         print("-"*40)
-        # self.quiz_list 를 순차적으로 표시한다
+        # self.quiz_list 를 순차적으로 표시한다 (정답/힌트 표시여부는 quiz.show 내부에서 mode로 처리)
         for quiz_num, quiz in enumerate(self.quiz_list,start=1):
-            quiz.show(quiz_num)
-            print(f"정답은 {quiz.get_answer_msg()}")
+            quiz.show(quiz_num,mode)
         print("-"*40)
 
     def show_score(self):
@@ -303,25 +327,33 @@ class QuizGame: # 상속받지않고
         self.best_score = None
         self.save()
 
+    def delete_quiz(self):
+        if not self.quiz_list:
+            print("\n등록된 퀴즈가 없습니다")
+            return
+        self.show_quiz_list(ShowMode.QUESTION_ONLY) # 퀴즈의 문제만 출력됨, 선택지 출력안됨
+        del_quiz_num = read_int("삭제하고자 하는 문제 번호 입력 : ",1,len(self.quiz_list))
+        self.quiz_list.pop(del_quiz_num-1)
+        self.save()
+        print("\n퀴즈가 삭제되었습니다")
+
     def run(self):
         try:
             while True:
                 self.show_menu()
-                usr_sel = read_int("숫자선택: ",1,5)
+                usr_sel = read_int("숫자선택: ",1,len(self.menu_list))
                 match usr_sel:
                     case 1:
-                        print("퀴즈 풀기 시작")
                         self.play()
                     case 2:
-                        print("퀴즈 추가 시작")
                         self.add_quiz()
                     case 3:
-                        print("퀴즈 목록 시작")
                         self.show_quiz_list()
                     case 4:
-                        print("퀴즈 점수 확인 시작")
-                        self.show_score()
+                        self.delete_quiz()
                     case 5:
+                        self.show_score()
+                    case 6:
                         print("게임을 종료합니다.")
                         break
                     case _: # read_int에서 걸렀기 때문에 여기 오지 않지만 안전장치로 추가
