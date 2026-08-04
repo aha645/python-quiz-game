@@ -78,21 +78,21 @@ class Quiz:
               mode에 따라 실제 문제(질문) 와 선택 지문이 선택적으로 표시된다.
     """
     def show(self, quiz_num:int, mode:ShowMode=ShowMode.WITH_CHOICES):
-        print()
-        print("-"*40)
         print(f"[문제{quiz_num} 번]",end=" ")
         print(self.question)
-        print()
         if mode == ShowMode.QUESTION_ONLY:
             return
+        print()
         for choice_num, choice_text in enumerate(self.choice_list,start=1):#start=1 index=0번 아이템을 1로 시작한다
             # choice_num 은 1,2,3,4 나오게 된다
             # choice_text는 실제 선택 문항이 나오게 된다
             print(f"{choice_num}. {choice_text}")
 
         if mode in (ShowMode.WITH_ANSWER, ShowMode.ALL):
+            print()
             print(f"정답: {self.get_answer_msg()}")
         if mode in (ShowMode.WITH_HINT, ShowMode.ALL):
+            print()
             print(f"힌트: {self.hint}")
 
     # choice_list에서 정답을 골라 표시한다
@@ -188,6 +188,7 @@ class QuizGame: # 상속받지않고
         ]
 
     def show_menu(self):
+        print("\033c", end="") # ANSI 이스케이프 코드로 화면을 지운다
         print()
         print("="*40)
         for idx,menu_str in enumerate(self.menu_list,start=1):
@@ -207,11 +208,13 @@ class QuizGame: # 상속받지않고
         shuffled_quiz_list = shuffled_quiz_list[:usr_wanted_quiz_count]# 섞은 퀴즈 목록의 처음부터 :usr_wanted_quiz_count까지 잘라서 새로운 리스트로 넘겨줌
         total_len = len(shuffled_quiz_list)
         for quiz_num, quiz in enumerate(shuffled_quiz_list,start=1):
+            print()
             quiz.show(quiz_num)
+            print()
             is_hint_used = read_int("힌트를 보시겠어요? (1:예, 2:아니오): ",1,2) == 1 # 1 -> True, 2 -> False
             if is_hint_used:
                 print(f"힌트: {quiz.hint}")
-            
+            print()
             usr_answer = read_int("정답입력 :",1,len(quiz.choice_list))
             if quiz.check_answer(usr_answer):
                 print("⭕️ 정답입니다.")
@@ -260,11 +263,12 @@ class QuizGame: # 상속받지않고
             print("\n등록된 퀴즈가 없습니다")
             return
         print(f"\n등록된 퀴즈 (총 {len(self.quiz_list)} 개)")
-        print("-"*40)
+        
         # self.quiz_list 를 순차적으로 표시한다 (정답/힌트 표시여부는 quiz.show 내부에서 mode로 처리)
         for quiz_num, quiz in enumerate(self.quiz_list,start=1):
+            print()
             quiz.show(quiz_num,mode)
-        print("-"*40)
+        
 
     def show_score(self):
         # self.best_score 값이 None 이면 퀴즈를 풀지 않은것임
@@ -275,7 +279,8 @@ class QuizGame: # 상속받지않고
         print(f"\n전체 게임 기록 (총 {len(self.score_history)} 회)")
         print("-"*40)
         for record in self.score_history:
-            print(f"{record['datetime']} | {record['total_len']}문제 | {record['score']}점")
+            display_datetime = record['datetime'].replace("T"," ") # ISO포맷의 T구분자를 공백으로 바꿔서 보기좋게 표시
+            print(f"{display_datetime} | 푼 문제수:{record['total_len']}개 | 점수:{record['score']}점")
         print("-"*40)
 
     def update_score(self, new_score:int):
@@ -346,6 +351,7 @@ class QuizGame: # 상속받지않고
             print("\n등록된 퀴즈가 없습니다")
             return
         self.show_quiz_list(ShowMode.QUESTION_ONLY) # 퀴즈의 문제만 출력됨, 선택지 출력안됨
+        print()
         del_quiz_num = read_int("삭제하고자 하는 문제 번호 입력 : ",1,len(self.quiz_list))
         self.quiz_list.pop(del_quiz_num-1)
         self.save()
@@ -372,6 +378,7 @@ class QuizGame: # 상속받지않고
                         break
                     case _: # read_int에서 걸렀기 때문에 여기 오지 않지만 안전장치로 추가
                         print("\n잘못된 입력입니다.")
+                input("\n계속하려면 Enter를 눌러주세요...") # 결과를 확인한 뒤 넘어가도록 대기, 여기서 넘어가야 다음 루프의 show_menu가 화면을 지운다
         except (KeyboardInterrupt,EOFError):
             print("\n프로그램을 강제 종료합니다.")
 
