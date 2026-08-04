@@ -228,7 +228,7 @@ class QuizGame: # 상속받지않고
         print("="*40)
         print()
         self.score_history.append({
-            "datetime":datetime.now().isoformat(timespec="seconds"),
+            "datetime":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "total_len":total_len,
             "score":score
         })
@@ -279,8 +279,7 @@ class QuizGame: # 상속받지않고
         print(f"\n전체 게임 기록 (총 {len(self.score_history)} 회)")
         print("-"*40)
         for record in self.score_history:
-            display_datetime = record['datetime'].replace("T"," ") # ISO포맷의 T구분자를 공백으로 바꿔서 보기좋게 표시
-            print(f"{display_datetime} | 푼 문제수:{record['total_len']}개 | 점수:{record['score']}점")
+            print(f"{record['datetime']} | 푼 문제수:{record['total_len']}개 | 점수:{record['score']}점")
         print("-"*40)
 
     def update_score(self, new_score:int):
