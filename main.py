@@ -1,4 +1,5 @@
 import json
+import random
 # read_int 기능: 문자 공백제거, 빈 입력에 대응, 숫자아닌 입력에 대응, 숫자범위 벗어난 입력에 대응
 # pre_msg : str 타입으로 사용자에게 어떤것을 입력해야할지 메세지를 표시한다
 # value_min: int 타입으로 숫자범위 최소값
@@ -162,8 +163,10 @@ class QuizGame: # 상속받지않고
             print("퀴즈 목록이 없어요. 퀴즈를 추가해 주세요")
             return
         ok_cnt=0
-        total_len = len(self.quiz_list)
-        for quiz_num, quiz in enumerate(self.quiz_list,start=1):
+        shuffled_quiz_list = self.quiz_list[:] # list(self.quiz_list) 라고 하지않는 이유는 속도차이때문, slice가 더 빠르다고함
+        random.shuffle(shuffled_quiz_list) # random하게 재배치된 결과가 shuffled_quiz_list에 반영되어짐
+        total_len = len(shuffled_quiz_list)
+        for quiz_num, quiz in enumerate(shuffled_quiz_list,start=1):
             quiz.show(quiz_num)
             usr_answer = read_int("정답입력 :",1,len(quiz.choice_list))
             if quiz.check_answer(usr_answer):
