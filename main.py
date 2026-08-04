@@ -162,9 +162,11 @@ class QuizGame: # 상속받지않고
         if not self.quiz_list:
             print("퀴즈 목록이 없어요. 퀴즈를 추가해 주세요")
             return
-        ok_cnt=0
+        usr_wanted_quiz_count = read_int(pre_msg=f"몇 문제 풀까요? (1~{len(self.quiz_list)}): ",value_min=1,value_max=len(self.quiz_list))
+        ok_cnt=0        
         shuffled_quiz_list = self.quiz_list[:] # list(self.quiz_list) 라고 하지않는 이유는 속도차이때문, slice가 더 빠르다고함
         random.shuffle(shuffled_quiz_list) # random하게 재배치된 결과가 shuffled_quiz_list에 반영되어짐
+        shuffled_quiz_list = shuffled_quiz_list[:usr_wanted_quiz_count]# 섞은 퀴즈 목록의 처음부터 :usr_wanted_quiz_count까지 잘라서 새로운 리스트로 넘겨줌
         total_len = len(shuffled_quiz_list)
         for quiz_num, quiz in enumerate(shuffled_quiz_list,start=1):
             quiz.show(quiz_num)
