@@ -46,9 +46,16 @@ def read_str(pre_msg:str)->str:
 """
 from typing import Self
 class Quiz:
-    def __init__(self, question:str, choice_list:list, answer:int):
+    def __init__(self, question:str, choice_list:list, choice_count:int, answer:int):
+        if len(choice_list)!=choice_count:
+            raise ValueError(f"문제선택 항목 리스트 와 항목 개수 불일치(list={len(choice_list)}, count={choice_count})")
+        if len(choice_list)<2:
+            raise ValueError(f"문제 선택항목은 최소 2개 이상이어야합니다 (현재 {len(choice_list)}개 입력됨)")
+        if not isinstance(answer,int) or not (1<=answer<=len(choice_list)):
+            raise ValueError(f"정답은 1~{len(choice_list)} 사이의 정수여야 합니다. (현재값 : {answer})")
         self.question=question      # 문제 질문
-        self.choice_list = choice_list  # 보기 선택지 리스트(4개 리스트)
+        self.choice_list = choice_list  # 보기 선택지 리스트
+        self.choice_count = choice_count # 선택지 리스트의 개수를 정해주어 만약 state.json데이터를 임의로 깨뜨려도 검증가능함
         self.answer = answer        # 정답 번호 1~4
     """
     show 함수: quiz_num 는 int형식으로 문제를 몇 번으로 표시할 것인지 정하는 숫자 이고 문제 내부적으로 
@@ -76,13 +83,14 @@ class Quiz:
     # dictionary 데이터를 사용해서 class인스턴스 생성
     @classmethod #cls를 통하여 객체가 생성되지 않았을때 객체를 생성
     def from_dict(cls, data:dict)->Self: # 호출한 클래스와 항상 같은 타입을 반환한다는 사실이 코드에 반영되어 , 타입검사가 실제런타임 동작과 어긋나지 않도록 함
-        return cls(data["question"],list(data["choice_list"]),data["answer"])
+        return cls(data["question"],list(data["choice_list"]),data["choice_count"],data["answer"])
     
     # 클래스 객체 속성 값을 dictionary형태로 변환
     def to_dict(self):
         return {
             "question":self.question,
             "choice_list":list(self.choice_list), #일어나진 않지만 얕은 복사시 동일참조되는 문제 해결위해 list를 새로생성함
+            "choice_count":self.choice_count,
             "answer":self.answer
         }
 
@@ -102,7 +110,7 @@ class QuizGame: # 상속받지않고
                 ["copy.deepcopy(리스트)", "리스트[:]", 
                  "리스트2 = 리스트1 (대입 연산)", 
                  "json.dumps(리스트)"
-                ], 2),
+                ], 4, 2),
             Quiz("""다음 코드의 출력 결과는?
                     def outer():
                         x = 10
@@ -117,25 +125,25 @@ class QuizGame: # 상속받지않고
                  "11 12", 
                  "10 11", 
                  "11 11"
-                ], 2),
+                ], 4, 2),
             Quiz("다음 중 제너레이터(generator)를 만드는 방법이 아닌 것은?",
                 ["yield를 사용하는 함수", 
                  "(x for x in range(5)) 형태의 표현식",
                  "[x for x in range(5)] 형태의 표현식", 
                  "__next__와 __iter__를 구현한 클래스"
-                ], 3),
+                ], 4, 3),
             Quiz("GIL(Global Interpreter Lock)에 대한 설명으로 옳은 것은?",
                 ["멀티프로세싱도 GIL 때문에 CPU 병렬 처리가 불가능하다",
                  "CPU-bound 작업에서 멀티스레딩의 성능 향상을 제한한다",
                  "GIL은 Python 3.10부터 완전히 제거되었다",
                  "I/O-bound 작업에서는 멀티스레딩 성능 향상을 전혀 얻을 수 없다"
-                 ], 2),
+                 ], 4, 2),
             Quiz("`is`와 `==`의 차이에 대한 설명으로 틀린 것은?",
                 ["`is`는 객체의 메모리 주소(정체성)를 비교한다",
                 "`==`는 객체의 값을 비교한다",
                 "작은 정수(-5~256)는 캐싱되어 `is`로 비교해도 True가 나올 수 있다",
                 "모든 문자열 리터럴은 항상 `is`로 비교했을 때 True가 보장된다"
-                ], 4),
+                ], 4, 4),
         ]
 
     def show_menu(self):
@@ -157,7 +165,7 @@ class QuizGame: # 상속받지않고
         total_len = len(self.quiz_list)
         for quiz_num, quiz in enumerate(self.quiz_list,start=1):
             quiz.show(quiz_num)
-            usr_answer = read_int("정답입력 :",1,4)
+            usr_answer = read_int("정답입력 :",1,len(quiz.choice_list))
             if quiz.check_answer(usr_answer):
                 print("⭕️ 정답입니다.")
                 ok_cnt = ok_cnt + 1
@@ -174,15 +182,17 @@ class QuizGame: # 상속받지않고
     def add_quiz(self):
         # 문제 텍스트를 입력받는다
         question = read_str("문제를 입력하세요 :")
+        # 선택지 개수를 입력받는다
+        choice_count = read_int("선택지 개수입력(2~6):",2,6) #현재는 2~6개 까지 가변 선택지 문제를 등록할수있다
         # 선택지 텍스트를 입력받는다
         choice_list = []
-        for i in range(1,5):
+        for i in range(1,choice_count+1):
             choice_str = read_str(f"{i}번 :")
             choice_list.append(choice_str)        
         # 정답 숫자를 입력받는다
-        answer_num = read_int("정답 번호 입력: ",1,4)
+        answer_num = read_int("정답 번호 입력: ",1,choice_count)
         # self.quiz_list 의 맨 뒷부분에 추가한다 append
-        self.quiz_list.append(Quiz(question,choice_list,answer_num))
+        self.quiz_list.append(Quiz(question,choice_list,choice_count,answer_num))
         # 전체 내용을 state.json에 저장한다
         self.save()
         print("\n퀴즈가 추가되었 습니다")
