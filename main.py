@@ -1,4 +1,4 @@
-
+import json
 # read_int 기능: 문자 공백제거, 빈 입력에 대응, 숫자아닌 입력에 대응, 숫자범위 벗어난 입력에 대응
 # pre_msg : str 타입으로 사용자에게 어떤것을 입력해야할지 메세지를 표시한다
 # value_min: int 타입으로 숫자범위 최소값
@@ -76,13 +76,13 @@ class Quiz:
     # dictionary 데이터를 사용해서 class인스턴스 생성
     @classmethod #cls를 통하여 객체가 생성되지 않았을때 객체를 생성
     def from_dict(cls, data:dict)->Self: # 호출한 클래스와 항상 같은 타입을 반환한다는 사실이 코드에 반영되어 , 타입검사가 실제런타임 동작과 어긋나지 않도록 함
-        return cls(data["question"],data["choice_list"],data["answer"])
+        return cls(data["question"],list(data["choice_list"]),data["answer"])
     
     # 클래스 객체 속성 값을 dictionary형태로 변환
     def to_dict(self):
         return {
             "question":self.question,
-            "choice_list":self.choice_list,
+            "choice_list":list(self.choice_list), #일어나진 않지만 얕은 복사시 동일참조되는 문제 해결위해 list를 새로생성함
             "answer":self.answer
         }
 
@@ -91,8 +91,9 @@ class Quiz:
 """
 class QuizGame: # 상속받지않고
     def __init__(self): # 객체가 생성되는 순간 생성되는 변수, 객체 각각 별도공간 할당됨
-        self.quiz_list:list[Quiz]=self.default_quiz_list() # 퀴즈를 리스트로 메모리에서 관리함
+        self.quiz_list:list[Quiz]=[] # 퀴즈를 리스트로 메모리에서 관리함
         self.best_score = None # 퀴즈 풀었을때 최고 점수, 퀴즈풀지않고 스코어 확인시 None이면 퀴즈를 풀라고 해야함, 0으로 초기화하면 풀지도않았는데 점수가 0 인것으로 오해됨
+        self.load() # load함수 내부에서 정상적이면 파일 내용으로 채우고 파일이 문제가 있다면 기본값으로 재설정 합니다
 
     # state.json파일이없을때 사용할 기본 퀴즈 생성
     def default_quiz_list(slef)->list[Quiz]:
@@ -215,7 +216,57 @@ class QuizGame: # 상속받지않고
             self.save()
 
     def save(self):
-        pass        
+        #메모리에 있는 내용을 파일로 저장
+        w_data={
+            "quiz_list":[ quiz.to_dict() for quiz in self.quiz_list],
+            "best_score":self.best_score
+        }
+        #w_data를 state.json으로 저장하는데 utf-8 인코딩형태로 저장한다
+        try:
+            with open(file="state.json",mode="w",encoding="utf-8") as file:
+                #ensure_ascii: 한글 같은 비 ascii문자를 유니코드 이스케이프문자(\uXXXX)로 바꾸지 말라는 의미
+                json.dump(obj=w_data,fp=file,ensure_ascii=False)
+        except OSError:
+            print("파일 저장 중 요류발생")
+
+    def load(self):
+        # state.json 파일을 읽어서 self.quiz_list 와 self.best_score 값을 복원
+        try:
+            with open(file="state.json", mode="r", encoding="utf-8") as file:
+                r_data = file.read().strip()
+                
+                if not r_data:
+                    raise ValueError("파일이 비어있습니다.")
+                
+                # 파일 객체가 아닌 '문자열'을 파싱하므로 json.loads() 사용
+                data = json.loads(r_data)
+                
+            if not isinstance(data, dict):
+                raise ValueError("데이터가 dictionary 형태가 아닙니다.")
+                
+            if "quiz_list" not in data or not data["quiz_list"]:
+                raise ValueError("퀴즈 데이터가 유효하지 않습니다.")
+                
+            # 데이터 복원 진행
+            self.quiz_list = [Quiz.from_dict(quiz_dict) for quiz_dict in data["quiz_list"]]
+            
+            # 안전하게 get() 메서드를 사용하여 KeyError 방지 및 기본값 처리
+            self.best_score = data.get("best_score", None)
+
+        except FileNotFoundError:
+            print("저장된 파일이 없어 기본 데이터로 시작합니다.")
+            self._init_default_data()
+
+        except (ValueError, json.JSONDecodeError, KeyError, TypeError) as e:
+            # 데이터 포맷 변환 실패, 키 누락 등 파일 손상 케이스 처리
+            print(f"파일 손상 또는 데이터 오류({e})로 인해 기본 데이터로 초기화합니다.")
+            self._init_default_data()
+
+    def _init_default_data(self):
+        # 중복되는 초기화 및 저장 로직을 별도 메서드로 분리
+        self.quiz_list = self.default_quiz_list()
+        self.best_score = None
+        self.save()
 
     def run(self):
         try:
