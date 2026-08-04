@@ -1,7 +1,7 @@
 import json
 import random
 from enum import Enum
-
+from datetime import datetime
 # 퀴즈 표시 방식을 나타내는 모드
 # QUESTION_ONLY: 질문만 표시
 # WITH_CHOICES : 질문 + 선택지
@@ -122,6 +122,7 @@ class Quiz:
 """
 class QuizGame: # 상속받지않고
     def __init__(self): # 객체가 생성되는 순간 생성되는 변수, 객체 각각 별도공간 할당됨
+        self.score_history:list[dict]=[]
         self.quiz_list:list[Quiz]=[] # 퀴즈를 리스트로 메모리에서 관리함
         self.best_score = None # 퀴즈 풀었을때 최고 점수, 퀴즈풀지않고 스코어 확인시 None이면 퀴즈를 풀라고 해야함, 0으로 초기화하면 풀지도않았는데 점수가 0 인것으로 오해됨
         self.load() # load함수 내부에서 정상적이면 파일 내용으로 채우고 파일이 문제가 있다면 기본값으로 재설정 합니다
@@ -223,6 +224,12 @@ class QuizGame: # 상속받지않고
         print(f"결과: {total_len} 문제 중 {ok_cnt} 문제 맞춤! ({score} 점)")
         print("="*40)
         print()
+        self.score_history.append({
+            "datetime":datetime.now().isoformat(timespec="seconds"),
+            "total_len":total_len,
+            "score":score
+        })
+        self.save() # 최고점수 갱신 여부와 상관없이 기록은 항상 저장한다
         self.update_score(score)
 
     def add_quiz(self):
@@ -265,7 +272,12 @@ class QuizGame: # 상속받지않고
             print("\n아직 퀴즈를 풀지 않았습니다. 퀴즈를 풀어야 점수확인이 가능합니다.")
             return
         print(f"\n최고점수: {self.best_score} 점")
-        
+        print(f"\n전체 게임 기록 (총 {len(self.score_history)} 회)")
+        print("-"*40)
+        for record in self.score_history:
+            print(f"{record['datetime']} | {record['total_len']}문제 | {record['score']}점")
+        print("-"*40)
+
     def update_score(self, new_score:int):
         # self.best_score가 None이면 new_score를 self.best_score에 저장
         # new_score와 self.best_score를 비교해서 self.best_score보다 크면 self.best_score에 저장
@@ -278,7 +290,8 @@ class QuizGame: # 상속받지않고
         #메모리에 있는 내용을 파일로 저장
         w_data={
             "quiz_list":[ quiz.to_dict() for quiz in self.quiz_list],
-            "best_score":self.best_score
+            "best_score":self.best_score,
+            "score_history":self.score_history,
         }
         #w_data를 state.json으로 저장하는데 utf-8 인코딩형태로 저장한다
         try:
@@ -311,6 +324,7 @@ class QuizGame: # 상속받지않고
             
             # 안전하게 get() 메서드를 사용하여 KeyError 방지 및 기본값 처리
             self.best_score = data.get("best_score", None)
+            self.score_history = data.get("score_history", [])
 
         except FileNotFoundError:
             print("저장된 파일이 없어 기본 데이터로 시작합니다.")
