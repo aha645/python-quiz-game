@@ -72,6 +72,7 @@ python-quiz-game/
     {
       "question": "다음 중 얕은 복사(shallow copy)를 수행하는 방법은?",
       "choice_list": ["copy.deepcopy(리스트)", "리스트[:]", "리스트2 = 리스트1 (대입 연산)", "json.dumps(리스트)"],
+      "choice_count":4
       "answer": 2
     }
   ],
@@ -79,7 +80,7 @@ python-quiz-game/
 }
 ```
 
-- `quiz_list`: 등록된 퀴즈 배열. 각 항목은 `question`(문제), `choice_list`(4개의 선택지 배열), `answer`(정답 번호, 1~4)로 구성됩니다.
+- `quiz_list`: 등록된 퀴즈 배열. 각 항목은 `question`(문제), `choice_list`(선택지 배열), `choice_count`(선택지 배열의 개수), `answer`(정답 번호, 1~`choice_count`)로 구성됩니다.
 - `best_score`: 지금까지 기록한 최고 점수(0~100). 퀴즈를 한 번도 풀지 않았다면 `null`입니다.
 
 파일이 없거나(`FileNotFoundError`), 비어 있거나, JSON 형식이 손상되었거나, 필수 데이터(`quiz_list`)가 유효하지 않은 경우에는 자동으로 기본 제공 퀴즈 5문항으로 초기화한 뒤 `state.json`을 새로 저장합니다. 이 파일은 `.gitignore`에 포함되어 있지 않으므로, 개인 실행 기록을 버전관리에서 제외하고 싶다면 `.gitignore`에 `state.json`을 추가하는 것을 권장합니다.
