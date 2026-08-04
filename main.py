@@ -11,6 +11,10 @@ def read_int(pre_msg:str,value_min:int,value_max:int) -> int:
         if usr_str=="":
             print("입력이 비어 있어요. 다시입력 하세요")
             continue
+        #02, 03과 같이 앞에 0을 붙이는 경우 int("02") -> 2로 처리하므로, 스트링 비교처리로 제외시키자
+        if len(usr_str)>1 and usr_str.startswith("0"):
+            print("숫자 앞에 0을 붙이지 말아주세요")
+            continue
 
         try:
             usr_val = int(usr_str) #문자열 usr_str을 int()넣었을때 발생할 수 있는 예되는 오직 ValueError
@@ -88,7 +92,7 @@ class Quiz:
 class QuizGame: # 상속받지않고
     def __init__(self): # 객체가 생성되는 순간 생성되는 변수, 객체 각각 별도공간 할당됨
         self.quiz_list:list[Quiz]=self.default_quiz_list() # 퀴즈를 리스트로 메모리에서 관리함
-        self.best_score = 0 # 퀴즈 풀었을때 최고 점수
+        self.best_score = None # 퀴즈 풀었을때 최고 점수, 퀴즈풀지않고 스코어 확인시 None이면 퀴즈를 풀라고 해야함, 0으로 초기화하면 풀지도않았는데 점수가 0 인것으로 오해됨
 
     # state.json파일이없을때 사용할 기본 퀴즈 생성
     def default_quiz_list(slef)->list[Quiz]:
@@ -164,6 +168,7 @@ class QuizGame: # 상속받지않고
         print(f"결과: {total_len} 문제 중 {ok_cnt} 문제 맞춤! ({score} 점)")
         print("="*40)
         print()
+        self.update_score(score)
 
     def add_quiz(self):
         # 문제 텍스트를 입력받는다
@@ -194,6 +199,21 @@ class QuizGame: # 상속받지않고
             print(f"정답은 {quiz.get_answer_msg()}")
         print("-"*40)
 
+    def show_score(self):
+        # self.best_score 값이 None 이면 퀴즈를 풀지 않은것임
+        if self.best_score == None:
+            print("\n아직 퀴즈를 풀지 않았습니다. 퀴즈를 풀어야 점수확인이 가능합니다.")
+            return
+        print(f"\n최고점수: {self.best_score} 점")
+        
+    def update_score(self, new_score:int):
+        # self.best_score가 None이면 new_score를 self.best_score에 저장
+        # new_score와 self.best_score를 비교해서 self.best_score보다 크면 self.best_score에 저장
+        if self.best_score==None or self.best_score < new_score:# 비교순서 바뀌면 안됨
+            self.best_score = new_score
+            print(f"새로운 최고점수 :{new_score}점 입니다")
+            self.save()
+
     def save(self):
         pass        
 
@@ -214,6 +234,7 @@ class QuizGame: # 상속받지않고
                         self.show_quiz_list()
                     case 4:
                         print("퀴즈 점수 확인 시작")
+                        self.show_score()
                     case 5:
                         print("게임을 종료합니다.")
                         break
