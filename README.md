@@ -150,6 +150,7 @@ shuffled_quiz_list = random.sample(self.quiz_list, usr_wanted_quiz_count)
 # 커밋 단위/메세지 규칙
 ```
  브랜치명 작업내용
+ 이벤트  작업내용
 ```
 ```bash
 commit f634efabeebc9b608bf290ffca8aec39868dd4f0
@@ -157,6 +158,13 @@ Author: aha645 <likylove@naver.com>
 Date:   Mon Aug 3 20:19:05 2026 +0900
 
     feature/add-quiz add_quiz()기능 구현,show_quiz_list()기능구현
+```
+```bash
+commit 7761e2464b38a7e56ceb13368b5ec56700e4dc82
+Author: aha645 <likylove@naver.com>
+Date:   Tue Aug 4 19:13:04 2026 +0900
+
+    보너스4: 퀴즈삭제기능구현, 퀴즈정보보여주는 기능을 Enum을 사용하여 mode에따라 다르게출력되는 show()함수 구현, delete_quiz()함수 구현
 ```
 
 # 브랜치 목적 및 병합의 이유
